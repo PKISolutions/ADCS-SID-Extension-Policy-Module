@@ -48,7 +48,7 @@ static class DsUtils {
     }
 
     static DirectoryEntry getGCSearchRoot() {
-        String[] domainTokens = Forest.GetCurrentForest().Name.Split('.');
+        String[] domainTokens = Domain.GetComputerDomain().Name.Split('.');
 
         return new DirectoryEntry("GC://DC=" + String.Join(",DC=", domainTokens));
     }
