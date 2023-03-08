@@ -144,7 +144,15 @@ public class Policy : CertPolicyBase {
             // if necessary (only when untrusted SID extension is presented in request).
             RequestExtension sidExtension = extensionList.FirstOrDefault(x => SID_EXTENSION_OID.Equals(x.ExtensionName.Value));
             if (sidExtension != null) {
-                return enforceSidExtensionPolicy(untrustedSidPolicy);
+                PolicyModuleAction result = enforceSidExtensionPolicy(untrustedSidPolicy);
+                // if native policy module asks to pend request and this policy module is configured to issue
+                // such request, we shall return native policy module result. In other words, when untrusted SID extension
+                // policy is set to 'Issue', we are transparent to CA and forward response from native policy module.
+                if (result == PolicyModuleAction.Issue && nativeResult == PolicyModuleAction.PutToPending) {
+                    return nativeResult;
+                }
+
+                return result;
             }
         }
 
