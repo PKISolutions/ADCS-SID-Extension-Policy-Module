@@ -49,5 +49,77 @@ Configures underlying policy module to use. By default, **Windows Default** poli
 This section contains configuration about how to retrieve account information from Active Directory. The following settings are available:
 - **Do not use Global Catalog**. This setting has effect only in domains with trusts (multi-domain forest or with trusts between different domains in different forests). By default (unchecked), this policy module attempts to locate account by querying global catalog (GC) installed in current domain. CA doesn't require to have a direct LDAP connection to target domain if account belongs to trusted domain, this work is delegated to global catalogs. When checked, CA will attempt to establish a LDAP connection to trusted domain and execute account search.
 
-### Template/Request mapping
+### Template/Requester mapping
 This setting represent a set of mappings between offline templates and original requesters. This policy module will attempt account lookup only when request matches at least one mapping: request is against offline template in **Template** column and requester matches the requester in **Requester** column.
+
+
+## CLI
+CLI configuration is available on all CA installations, including Server Core.
+
+**Note:** provided certutil CLI examples are available only after policy module is configured as default policy module.
+
+### Untrusted SID Extension policy
+```
+certutil -setreg policy\UntrustedSidExtensionPolicy %policy%
+```
+where `%policy%` is a number that maps to the following actions
+%policy% value|policy name
+-|-
+0|PassThrough (Default)
+1|Suppress
+2|Pending
+3|Deny
+
+### Trusted SID Extension policy
+```
+certutil -setreg policy\TrustedSidExtensionPolicy %policy%
+```
+where `%policy%` is a number that maps to the following actions
+%policy% value|policy name
+-|-
+0|PassThrough (Default)
+1|Suppress
+2|Pending
+3|Deny
+
+### Logging Level
+```
+certutil -setreg policy\LogLevel %level%
+```
+where `%level%` is a number that maps to the following actions
+%level% value|Log level name
+-|-
+0|None (Default)
+1|Trace
+2|Debug
+3|Information
+4|Warning
+5|Error
+6|Critical
+
+### Native Policy Module
+This setting must be configured only when you want to use non-default policy module, for example FIM CM. This setting should be null or absent in order to use Windows Default policy module. An example to configure FIM CM policy module as underlying policy module:
+```
+certutil -setreg policy\NativeProgID Clm.Policy
+```
+Command parameter is policy module's COM ProgID. Consult with custom policy module documentation for COM ProgID.
+
+### Active Directory
+- Disable global catalog queries (use direct LDAP queries instead):
+```
+certutil -setreg policy\DoNotUseGC 1
+```
+- Enable global catalog queries (do not use direct LDAP queries):
+```
+certutil -setreg policy\DoNotUseGC 0
+```
+
+### Template/Requester mapping
+Template/requester mapping syntax includes a string that contains template OID and requester name in a form `DomainShortName\AccountSAMName` delimited by a collon. Use the following syntax to add a new map entry for template with `OID=1.3.6.1.4.1.311.21.8.149510.7314491.15746959.9320746.3700693.37.3678593.5087990` and `CONTOSO\IntuneSvcAccount` as allowed requester for this template:
+```
+certutil -setreg policy\AuthorizedMap +"1.3.6.1.4.1.311.21.8.149510.7314491.15746959.9320746.3700693.37.3678593.5087990:CONTOSO\IntuneSvcAccount"
+```
+use the following syntax to remove map entry:
+```
+certutil -setreg policy\AuthorizedMap -"1.3.6.1.4.1.311.21.8.149510.7314491.15746959.9320746.3700693.37.3678593.5087990:CONTOSO\IntuneSvcAccount"
+```
