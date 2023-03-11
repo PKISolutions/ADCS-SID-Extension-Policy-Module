@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 using ADCS.CertMod.Managed.Policy;
 
 namespace ADCS.SidExtension.PolicyModule.Forms;
 
 class PolicyModuleInfo {
+    static readonly Regex _regex = new Regex(@"\.Policy\.(\d+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
     PolicyModuleInfo(String progID) {
         Name = ProgID = progID;
     }
@@ -33,6 +36,11 @@ class PolicyModuleInfo {
             }
 
             policyInfo.Name = policyModule.GetDescription();
+            // Newer versions of policy module are appended by ".X", where X is the number.
+            Match match = _regex.Match(progID);
+            if (match.Success) {
+                policyInfo.Name += $" ({match.Groups[1].Value})";
+            }
         } catch { }
 
         return policyInfo;
