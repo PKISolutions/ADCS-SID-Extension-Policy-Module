@@ -3,9 +3,12 @@
 - This policy module should be installed on Enterprise CAs only. Standalone CAs weren't tested and not supported.
 
 # Installation
+1. Download the policy module from [Releases](https://github.com/PKISolutions/ADCS-SID-Extension-Policy-Module/releases) page. Policy module is shipped as ZIP archive.
+2. Unblock archive prior to extracting.
+3. Extract ZIP archive to local folder on CA. We do not set any requirements for this as long as it must be local folder.
 
 ## Policy Module registration
-Policy module is based on top of COM interfaces and must be registered in operating system in order to be visible to CA. Package contains a PowerShell script that performs COM object registration and (optionally) policy module assignment to CA. `Install-PolicyModule.ps1` script has the following parameters:
+Policy module is based on top of COM interfaces and must be registered in operating system in order to be visible to CA. Package contains an `Install-PolicyModule.ps1` PowerShell script that performs COM object registration and (optionally) policy module assignment to CA. `Install-PolicyModule.ps1` script has the following parameters:
 
 - `-Path` -- specifies the path to a policy module file, which is `ADCS.SidExtension.PolicyModule.dll`
 - `-AddToCA` -- a switch parameter that assigns this policy module on CA as current policy module.
