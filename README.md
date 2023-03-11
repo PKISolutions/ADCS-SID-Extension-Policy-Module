@@ -32,6 +32,8 @@ I've addressed this by chaining policy modules inside the code. That is, this po
 
 This policy module is released under MIT license and free for personal and commercial use. Given that policy module is supposed to run on a mission-critical server, I did all my best to ensure code accuracy, reliability, security and integrity. Source code is open and free for analysis or creating a derivative work.
 
+Release files are authenticode-signed. In addition, all assemblies are strong name signed.
+
 # Installation and configuration
 Follow installation guides to install and configure the policy module:
 - [Installation guide](https://github.com/PKISolutions/ADCS-SID-Extension-Policy-Module/blob/master/docs/installation.md)
