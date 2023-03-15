@@ -1,6 +1,6 @@
 [CmdletBinding()]
     param(
-        [System.IO.File]$Path,
+        [System.IO.FileInfo]$Path,
         [switch]$AddToCA,
         [switch]$Restart
     )
