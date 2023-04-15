@@ -6,7 +6,6 @@ using System.Security.Cryptography.X509Certificates;
 using ADCS.CertMod.Managed;
 using ADCS.CertMod.Managed.Policy;
 using ADCS.SidExtension.PolicyModule.Forms;
-using CERTENROLLLib;
 
 namespace ADCS.SidExtension.PolicyModule;
 
@@ -15,8 +14,6 @@ namespace ADCS.SidExtension.PolicyModule;
 [ProgId("PKISolutions_SID.Policy")]
 [Guid("4335db31-edc5-4277-b1ee-25b88a05192c")]
 public class Policy : CertPolicyBase {
-    const String SID_EXTENSION_OID = "1.3.6.1.4.1.311.25.2";
-    const String SAN_EXTENSION_OID = "2.5.29.17";
 
     readonly AppConfig _config;
 
@@ -126,25 +123,24 @@ public class Policy : CertPolicyBase {
         // check if there is a requester match in template configurations. Otherwise, return underlying policy module result
         Boolean match = subset.Any(x => requesterName.Equals(x.RequesterName, StringComparison.OrdinalIgnoreCase));
         // read all extensions from request
-        List<RequestExtension> extensionList = CertServer.GetRequestExtensions().ToList();
+        IReadOnlyList<RequestExtension> extensionList = CertServer.GetRequestExtensions().ToList();
+        // first, read request extensions as follows:
+        // - find location in request extensions that may contain SID extension.
+        // - try to read SAN extension from request
+        // - try to find subject identity in AD using corresponding alt name type (UPN for user, dnsHostName for computer)
+        RequestExtensionProcessResult extProcessResult = extensionList.ProcessRequestExtensions(templateInfo.SubjectType, match);
         if (match) {
-            // if there is a valid match for template and requester, then:
-            // - try to read SAN extension from request
-            // - try to find subject identity in AD using corresponding alt name type (UPN for user, dnsHostName for computer)
-            // - try to insert found SID into dummy certificate
-            // - return appropriate response back to CA
-            RequestExtension sanExtension = extensionList.FirstOrDefault(x => SAN_EXTENSION_OID.Equals(x.ExtensionName.Value));
             // if we were unable to populate SID extension ourselves, follow the policy:
             // either, pass through (issue the cert without SID extension) or deny request.
-            if (!addSidToCertificate(sanExtension, templateInfo.SubjectType)) {
-                return enforceSidExtensionPolicy(trustedSidPolicy);
+            if (!addSidToCertificate(extProcessResult, templateInfo.SubjectType)) {
+                return enforceSidExtensionPolicy(extProcessResult, trustedSidPolicy);
             }
         } else {
             // if there is no valid match for template and requester, then enforce untrusted SID extension policy
             // if necessary (only when untrusted SID extension is presented in request).
-            RequestExtension sidExtension = extensionList.FirstOrDefault(x => SID_EXTENSION_OID.Equals(x.ExtensionName.Value));
+            RequestExtension sidExtension = extensionList.FirstOrDefault(x => Constants.SID_EXTENSION_OID.Equals(x.ExtensionName.Value));
             if (sidExtension != null) {
-                PolicyModuleAction result = enforceSidExtensionPolicy(untrustedSidPolicy);
+                PolicyModuleAction result = enforceSidExtensionPolicy(extProcessResult, untrustedSidPolicy);
                 // if native policy module asks to pend request and this policy module is configured to issue
                 // such request, we shall return native policy module result. In other words, when untrusted SID extension
                 // policy is set to 'Issue', we are transparent to CA and forward response from native policy module.
@@ -158,10 +154,18 @@ public class Policy : CertPolicyBase {
 
         return nativeResult;
     }
-    PolicyModuleAction enforceSidExtensionPolicy(SidExtensionAction policy) {
+    PolicyModuleAction enforceSidExtensionPolicy(RequestExtensionProcessResult extProcessResult, SidExtensionAction policy) {
         switch (policy) {
             case SidExtensionAction.Suppress:
-                CertServer.GetManagedPolicyModule().DisableCertificateExtension(SID_EXTENSION_OID);
+                // if SID value is found in SID extension, disable the extension
+                if ((extProcessResult.SidValueLocation & SidValueLocation.SidExtension) == SidValueLocation.SidExtension) {
+                    disableSidExtension();
+                }
+                // if SID value is found in SAN extension, rebuild SAN extension by excluding rogue SID names.
+                if ((extProcessResult.SidValueLocation & SidValueLocation.SanExtension) == SidValueLocation.SanExtension) {
+                    // re-create SAN extension
+                    rebuildSanExtension(extProcessResult);
+                }
                 break;
             case SidExtensionAction.Deny:
                 return PolicyModuleAction.Deny;
@@ -171,49 +175,44 @@ public class Policy : CertPolicyBase {
 
         return PolicyModuleAction.Issue;
     }
-    Boolean addSidToCertificate(RequestExtension sanExtension, SubjectType subjectType) {
-        if (sanExtension == null) {
+    void disableSidExtension() {
+        CertServer.GetManagedPolicyModule().DisableCertificateExtension(Constants.SID_EXTENSION_OID);
+    }
+    void rebuildSanExtension(RequestExtensionProcessResult extProcessResult) {
+        // check if SID value was found in SAN extension. If not, do nothing.
+        if ((extProcessResult.SidValueLocation & SidValueLocation.SanExtension) == SidValueLocation.SanExtension) {
+            // try to create SAN extension
+            X509Extension? sanExtension = extProcessResult.CreateSafeSanExtension();
+            if (sanExtension == null) {
+                // if no safe names found (i.e. SAN contains only rogue SID value),
+                // then we effectively disable extension.
+                CertServer.GetManagedPolicyModule().DisableCertificateExtension(Constants.SAN_EXTENSION_OID);
+            } else {
+                // otherwise override SAN extension by including only safe names.
+                CertServer.GetManagedPolicyModule().SetCertificateExtension(sanExtension);
+            }
+        }
+    }
+
+    Boolean addSidToCertificate(RequestExtensionProcessResult extensionProcessResult, SubjectType subjectType) {
+        if (!extensionProcessResult.HasSanExtension) {
             Logger.LogDebug("SAN extension not found. Skipping.");
 
             return false;
         }
-
-        var ext = new CX509ExtensionAlternativeNames();
-        ext.InitializeDecode(EncodingType.XCN_CRYPT_STRING_BASE64, Convert.ToBase64String(sanExtension.Value));
-        // pick appropriate SAN name type depending on subject type in template.
-        // UPN for user templates and DNS name for machine templates
-        AlternativeNameType altNameType;
-        switch (subjectType) {
-            case SubjectType.User:
-                altNameType = AlternativeNameType.XCN_CERT_ALT_NAME_USER_PRINCIPLE_NAME;
-                break;
-            case SubjectType.Computer:
-                altNameType = AlternativeNameType.XCN_CERT_ALT_NAME_DNS_NAME;
-                break;
-            default:
-                return false;
-        }
-        // try to find desired name type. We read only first occurrence of desired name type 
-        IAlternativeName san = ext.AlternativeNames.Cast<IAlternativeName>().FirstOrDefault(x => x.Type == altNameType);
-        if (san == null) {
+        if (!extensionProcessResult.FoundPrincipalName) {
             Logger.LogDebug("Alternative name not found in SAN extension. Skipping.");
-            return false;
-        }
-        // read found alternative name value
-        String principalName = san.strValue;
-        Logger.LogDebug("Alt principal name: {0}", principalName);
-        if (String.IsNullOrWhiteSpace(principalName)) {
-            return false;
-        }
 
-        // invoke appropriate search method to query for identity's SID based on subject type
+            return false;
+        }
+        Logger.LogDebug("Alt principal name: {0}", extensionProcessResult.PrincipalName);
         String sid = null;
         switch (subjectType) {
             case SubjectType.User:
-                sid = DsUtils.FindSidByPrincipalName(principalName);
+                sid = DsUtils.FindSidByPrincipalName(extensionProcessResult.PrincipalName);
                 break;
             case SubjectType.Computer:
-                sid = DsUtils.FindSidByDnsName(principalName);
+                sid = DsUtils.FindSidByDnsName(extensionProcessResult.PrincipalName);
                 break;
         }
         Logger.LogDebug("Returned SID: {0}", sid);
@@ -224,6 +223,8 @@ public class Policy : CertPolicyBase {
         // insert SID extension into dummy certificate
         X509Extension extension = AsnUtils.EncodeSidExtension(sid);
         CertServer.GetManagedPolicyModule().SetCertificateExtension(extension);
+        // rebuild SAN extension if necessary to exclude rogue SID value from SAN extension.
+        rebuildSanExtension(extensionProcessResult);
 
         return true;
     }

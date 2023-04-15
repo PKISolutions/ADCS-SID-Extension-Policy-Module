@@ -63,6 +63,8 @@
     <Compile Include="AppConfig.cs" />
     <Compile Include="AsnUtils.cs" />
     <Compile Include="CertificateTemplateFlags.cs" />
+    <Compile Include="Constants.cs" />
+    <Compile Include="RequestExtensionListExtensions.cs" />
     <Compile Include="CertTemplateCache.cs" />
     <Compile Include="CertTemplateInfo.cs" />
     <Compile Include="DsUtils.cs" />
@@ -82,7 +84,9 @@
     </Compile>
     <Compile Include="Policy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RequestExtensionProcessResult.cs" />
     <Compile Include="SidExtensionAction.cs" />
+    <Compile Include="SidValueLocation.cs" />
     <Compile Include="SubjectType.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -110,7 +114,7 @@
       <Lcid>0</Lcid>
       <WrapperTool>tlbimp</WrapperTool>
       <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
     </COMReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
