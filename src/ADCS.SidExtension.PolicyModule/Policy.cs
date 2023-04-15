@@ -12,7 +12,7 @@ namespace ADCS.SidExtension.PolicyModule;
 
 [ComVisible(true)]
 [ClassInterface(ClassInterfaceType.None)]
-[ProgId("SysadminsLV_SID.Policy")]
+[ProgId("PKISolutions_SID.Policy")]
 [Guid("4335db31-edc5-4277-b1ee-25b88a05192c")]
 public class Policy : CertPolicyBase {
     const String SID_EXTENSION_OID = "1.3.6.1.4.1.311.25.2";
