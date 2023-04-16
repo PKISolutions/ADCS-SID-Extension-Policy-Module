@@ -38,7 +38,14 @@ public class Policy : CertPolicyBase {
         try {
             if (validatePrerequisites(out CertTemplateInfo targetTemplate)) {
                 // process request if all validations and prerequisites passed
-                return processRequest(targetTemplate, nativeResult);
+                PolicyModuleAction result =  processRequest(targetTemplate, nativeResult);
+                // we do not want place request into pending state when it is already pending, because it will
+                // fail to successfully resolve the request.
+                if (bNewRequest == 0 && result == PolicyModuleAction.PutToPending) {
+                    return PolicyModuleAction.Issue;
+                }
+
+                return result;
             }
         } catch (Exception ex) {
             Logger.LogError(ex, "[Policy::VerifyRequest]");
@@ -137,19 +144,16 @@ public class Policy : CertPolicyBase {
             }
         } else {
             // if there is no valid match for template and requester, then enforce untrusted SID extension policy
-            // if necessary (only when untrusted SID extension is presented in request).
-            RequestExtension sidExtension = extensionList.FirstOrDefault(x => Constants.SID_EXTENSION_OID.Equals(x.ExtensionName.Value));
-            if (sidExtension != null) {
-                PolicyModuleAction result = enforceSidExtensionPolicy(extProcessResult, untrustedSidPolicy);
-                // if native policy module asks to pend request and this policy module is configured to issue
-                // such request, we shall return native policy module result. In other words, when untrusted SID extension
-                // policy is set to 'Issue', we are transparent to CA and forward response from native policy module.
-                if (result == PolicyModuleAction.Issue && nativeResult == PolicyModuleAction.PutToPending) {
-                    return nativeResult;
-                }
-
-                return result;
+            // if necessary.
+            PolicyModuleAction result = enforceSidExtensionPolicy(extProcessResult, untrustedSidPolicy);
+            // if native policy module asks to pend request and this policy module is configured to issue
+            // such request, we shall return native policy module result. In other words, when untrusted SID extension
+            // policy is set to 'Issue', we are transparent to CA and forward response from native policy module.
+            if (result == PolicyModuleAction.Issue && nativeResult == PolicyModuleAction.PutToPending) {
+                return nativeResult;
             }
+
+            return result;
         }
 
         return nativeResult;
