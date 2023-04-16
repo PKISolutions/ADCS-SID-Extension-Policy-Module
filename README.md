@@ -9,6 +9,8 @@ In other words, presence of new SID extension will make all mapping types strong
 
 From May 10th, 2022 till Nov 14th 2023 AD environment will work in compatibility mode, where you can enable audit logging and determine accounts/certificates that don't meet enforcement requirements. After Nov 14th, 2023 AD environment will change to enforced mode and KDC will reject all client certificates that don't meet strong mapping requirements.
 
+**Remark:** starting with **Windows Server Preview Build 25246** and newer, Microsoft adds new strong mapping option using URI name type in SAN extension, see [Preview of SAN URI for Certificate Strong Mapping for KB5014754](https://techcommunity.microsoft.com/t5/ask-the-directory-services-team/preview-of-san-uri-for-certificate-strong-mapping-for-kb5014754/ba-p/3789785) article for more details. SID Policy Module do not include this new mapping option in issued certificate, only SID Extension inclusion in issued certificate is supported. However, SID Policy Module enforce Trusted and Untrusted SID policies to this new mapping, thus making it impossible for potential account spoofing (privilege escalation) via rogue SAN URI value.
+
 # What problem this Policy Module solves?
 
 Microsoft updated Enterprise CAs to automatically include new SID extension into certificates issued against online (where subject is built from AD) certificate templates. However there are other common use cases which are not covered by this update. This includes scenarios when identity certificates are issued using NDES/SCEP service, Microsoft Intune and others.
@@ -36,3 +38,6 @@ This policy module is released under MIT license and free for personal and comme
 Follow installation guides to install and configure the policy module:
 - [Installation guide](https://github.com/PKISolutions/ADCS-SID-Extension-Policy-Module/blob/master/docs/installation.md)
 - [Configuration guide](https://github.com/PKISolutions/ADCS-SID-Extension-Policy-Module/blob/master/docs/configuration.md)
+
+# Policy Module behavior
+- [SID Policy Module behavior](https://github.com/PKISolutions/ADCS-SID-Extension-Policy-Module/blob/master/docs/product-behavior.md)
