@@ -11,6 +11,7 @@
 Policy module is based on top of COM interfaces and must be registered in operating system in order to be visible to CA. Package contains an `Install-PolicyModule.ps1` PowerShell script that performs COM object registration and (optionally) policy module assignment to CA. `Install-PolicyModule.ps1` script has the following parameters:
 
 - `-Path` -- specifies the path to a policy module file, which is `ADCS.SidExtension.PolicyModule.dll`
+- `-RegisterOnly` -- performs COM component registration only. This parameter must be used when updating policy module to a newer version.
 - `-AddToCA` -- a switch parameter that assigns this policy module on CA as current policy module.
 - `-Restart` -- a switch parameter that restarts CA service to immediately apply changes. This switch is used along with `-AddToCA`.
 
@@ -23,6 +24,12 @@ You will have to manually enable policy module on CA.
 If you want to register COM objects and configure policy module as active on CA:
 ```PowerShell
 .\Install-PolicyModule -Path "C:\CA\Policy Modules\ADCS.SidExtension.PolicyModule.dll" -AddToCA -Restart
+```
+
+Use the following command if you are updating policy module to a newer version:
+**Note:** you must stop CA service during policy module upgrade.
+```PowerShell
+.\Install-PolicyModule -RegisterOnly
 ```
 
 ## Configure CA to use new policy module
