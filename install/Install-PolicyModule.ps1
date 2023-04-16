@@ -50,7 +50,7 @@ Windows Registry Editor Version 5.00
 "RuntimeVersion"="v4.0.30319"
 "CodeBase"="file:///{0}"
 
--[HKEY_CLASSES_ROOT\CLSID\{{4335DB31-EDC5-4277-B1EE-25B88A05192C}}\InprocServer32\1.0.0.0]
+[-HKEY_CLASSES_ROOT\CLSID\{{4335DB31-EDC5-4277-B1EE-25B88A05192C}}\InprocServer32\1.0.0.0]
 [HKEY_CLASSES_ROOT\CLSID\{{4335DB31-EDC5-4277-B1EE-25B88A05192C}}\InprocServer32\1.1.0.0]
 "Class"="ADCS.SidExtension.PolicyModule.Policy"
 "Assembly"="ADCS.SidExtension.PolicyModule, Version=1.1.0.0, Culture=neutral, PublicKeyToken=6406f24a7e84ddc5"
@@ -80,7 +80,7 @@ Windows Registry Editor Version 5.00
 "RuntimeVersion"="v4.0.30319"
 "CodeBase"="file:///{0}"
 
--[HKEY_CLASSES_ROOT\CLSID\{{6369E566-25A1-456C-8CD8-C00D07E59B99}}\InprocServer32\1.0.0.0]
+[-HKEY_CLASSES_ROOT\CLSID\{{6369E566-25A1-456C-8CD8-C00D07E59B99}}\InprocServer32\1.0.0.0]
 [HKEY_CLASSES_ROOT\CLSID\{{6369E566-25A1-456C-8CD8-C00D07E59B99}}\InprocServer32\1.1.0.0]
 "Class"="ADCS.SidExtension.PolicyModule.PolicyManage"
 "Assembly"="ADCS.SidExtension.PolicyModule, Version=1.1.0.0, Culture=neutral, PublicKeyToken=6406f24a7e84ddc5"
