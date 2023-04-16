@@ -1,5 +1,9 @@
 This document provides Policy Module behavior depending on incoming request and module configuration.
 
+SID Policy Module enforces its logic only when the following pre-conditions are met:
+- Native/Underlying policy module does not deny request. If deny is requested by native policy module, the request is denied. This behavior cannot be changed.
+- Template is offline template, i.e. accepts subject from incoming request. If template builds subject from Active Directory, SID Policy Module forwards native policy module result back to CA and do not evaluate/modify original request.
+
 The following table provides information about columns used in subsequent tables, their descriptions and applicable values:
 <table>
 	<thead>
@@ -92,13 +96,9 @@ The following table provides information about columns used in subsequent tables
 </table>
 
 # Behaviors
-This section provides Policy Module behavior depending on incoming request request conditions and module configuration.
+This section provides Policy Module behavior depending on incoming request request conditions and module configuration given that incoming CSR passed global pre-conditions.
 
-## Native policy module denied request
-SID Policy Module passes incoming request to configured native policy module. If native policy module instructs to deny the request, SID Policy Module do not process request and denies request. This behavior cannot be overriden.
-
-## Native policy module instructs to put request to Pending state or issue the certificate
-### Request does not match any Template/Requester map entry
+## Request does not match any Template/Requester map entry
 In this case, **Untrusted SID Policy** setting is enforced as follows:
 
 <table>
@@ -107,7 +107,7 @@ In this case, **Untrusted SID Policy** setting is enforced as follows:
 			<th>Req has SID Ext</th>
 			<th>Req has SID in SAN</th>
 			<th>Untrusted SID Policy</th>
-			<th>Request result</th>
+			<th>Request Result</th>
 			<th>SID Extension</th>
 			<th>SAN Extension</th>
 		</tr>
@@ -220,7 +220,7 @@ In this case, **Untrusted SID Policy** setting is enforced as follows:
 	</tbody>
 </table>
 
-### Request matches at least one entry in Template/Requester map table and target principal was not resolved
+## Request matches at least one entry in Template/Requester map table and target principal was not resolved
 SID Policy Module attempts to find target identity from the incoming request's SAN extension. If template subject is user, then at least one UPN entry in SAN extension is expected. If template subject is machine (computer), then at least one entry of type of `dnsName` name type is expected. In both cases, only first occurrence of matching name type is evaluated.
 
 The following table outlines the SID Policy Module behavior when target identity was not resolved for whatever reason. The behavior is identical to a table in previous section with the only difference that **Trusted SID Policy** configuration is evaluated.
@@ -230,7 +230,7 @@ The following table outlines the SID Policy Module behavior when target identity
 			<th>CSR has SID Ext</th>
 			<th>CSR has SID in SAN</th>
 			<th>Trusted SID Policy</th>
-			<th>Request result</th>
+			<th>Request Result</th>
 			<th>SID Extension</th>
 			<th>SAN Extension</th>
 		</tr>
@@ -343,7 +343,7 @@ The following table outlines the SID Policy Module behavior when target identity
 	</tbody>
 </table>
 
-### Request matches at least one entry in Template/Requester map table and target principal was successfully resolved
+## Request matches at least one entry in Template/Requester map table and target principal was successfully resolved
 This section outlines SID Policy Module behavior when all conditions are successfully passed and target identity. In this case, SID extension value in request is discarded and overwritten by a SID value retrieved from Active Directory.
 <table>
 	<thead>
