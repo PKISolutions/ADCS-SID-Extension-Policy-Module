@@ -22,7 +22,7 @@ This section configures policy module when incoming request includes user-crafte
 Action|Description
 -|-
 **PassThrough** (Default)|Passes request to underlying policy module unmodified and takes no actions on request. Underlying policy module result is returned back to CA. This may result in request to place in pending request if underlying policy module asks to do so.
-**Suppress**|Removes SID extension from request and issued certificate (if underlying policy module allows certificate issuance).
+**Suppress**|Removes SID extension and/or SID value stored in SAN extension from request and issued certificate (if underlying policy module allows certificate issuance).
 **Pending**|Puts request into pending state even if underlying policy module allows certificate issuance.
 **Deny**|Forcibly denies request.
 
@@ -33,7 +33,7 @@ This section configures policy module when incoming request falls to at least on
 Action|Description
 -|-
 **PassThrough** (Default)|Passes request to underlying policy module unmodified and takes no actions on request. Underlying policy module result is returned back to CA. This may result in request to place in pending request if underlying policy module asks to do so.
-**Suppress**|Removes SID extension from request and issued certificate (if underlying policy module allows certificate issuance). This action have effect only if incoming request contains SID extension.
+**Suppress**|Removes SID extension and/or SID value stored in SAN extension from request and issued certificate (if underlying policy module allows certificate issuance). This action have effect only if incoming request contains SID extension.
 **Pending**|Puts request into pending state even if underlying policy module allows certificate issuance.
 **Deny**|Forcibly denies request.
 
