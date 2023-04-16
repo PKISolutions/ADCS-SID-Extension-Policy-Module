@@ -43,7 +43,7 @@ public class AppConfig : RegistryService {
             }
         } catch { }
 
-        return false;
+        return true;
     }
     public void SetDsDoNotUseGC(Boolean doNotUseGC) {
         WriteRecord(new RegTriplet(PROP_DS_DO_NOT_USE_GC, RegistryValueKind.DWord) {
