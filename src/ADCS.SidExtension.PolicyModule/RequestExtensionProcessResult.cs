@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using CERTENROLLLib;
 
@@ -45,7 +46,7 @@ public class RequestExtensionProcessResult {
     /// </summary>
     /// <returns>Encoded SAN extension if at least one safe alt name is found, otherwise null.</returns>
     public X509Extension? CreateSafeSanExtension() {
-        if (SafeAltNames == null) {
+        if (!SafeAltNames.Any()) {
             return null;
         }
         var altNames = new CAlternativeNamesClass();
