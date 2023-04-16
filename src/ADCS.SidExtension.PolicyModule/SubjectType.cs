@@ -3,7 +3,7 @@
 /// <summary>
 /// Contains enumeration of certificate template subject types.
 /// </summary>
-enum SubjectType {
+public enum SubjectType {
     /// <summary>
     /// Enrollment recipient is user entity.
     /// </summary>

@@ -1,6 +1,25 @@
+<#
+.SYNOPSIS
+    Performs ADCS SID extension policy module installation, registration and configuration.
+.DESCRIPTION
+    Performs ADCS SID extension policy module installation, registration and configuration.
+.PARAMETER Path
+    Specifies the path location to ADCS policy module file. Default policy module file name is
+    'ADCS.SidExtension.PolicyModule.dll'.
+
+    If parameter is omitted, current working directory is used to search for file.
+.PARAMETER RegisterOnly
+    Specifies whether to register COM components only. If True, other switch parameters are ignored.
+.PARAMETER AddToCA
+    Specifies whether policy module should be added to CA as default policy module.
+.PARAMETER Restart
+    Specifies whether CA service must be restarted automatically after configuring policy module as
+    default policy module.
+#>
 [CmdletBinding()]
     param(
         [System.IO.FileInfo]$Path,
+        [switch]$RegisterOnly,
         [switch]$AddToCA,
         [switch]$Restart
     )
@@ -27,13 +46,14 @@ Windows Registry Editor Version 5.00
 @="mscoree.dll"
 "ThreadingModel"="Both"
 "Class"="ADCS.SidExtension.PolicyModule.Policy"
-"Assembly"="ADCS.SidExtension.PolicyModule, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6406f24a7e84ddc5"
+"Assembly"="ADCS.SidExtension.PolicyModule, Version=1.1.0.0, Culture=neutral, PublicKeyToken=6406f24a7e84ddc5"
 "RuntimeVersion"="v4.0.30319"
 "CodeBase"="file:///{0}"
 
-[HKEY_CLASSES_ROOT\CLSID\{{4335DB31-EDC5-4277-B1EE-25B88A05192C}}\InprocServer32\1.0.0.0]
+[-HKEY_CLASSES_ROOT\CLSID\{{4335DB31-EDC5-4277-B1EE-25B88A05192C}}\InprocServer32\1.0.0.0]
+[HKEY_CLASSES_ROOT\CLSID\{{4335DB31-EDC5-4277-B1EE-25B88A05192C}}\InprocServer32\1.1.0.0]
 "Class"="ADCS.SidExtension.PolicyModule.Policy"
-"Assembly"="ADCS.SidExtension.PolicyModule, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6406f24a7e84ddc5"
+"Assembly"="ADCS.SidExtension.PolicyModule, Version=1.1.0.0, Culture=neutral, PublicKeyToken=6406f24a7e84ddc5"
 "RuntimeVersion"="v4.0.30319"
 "CodeBase"="file:///{0}"
 
@@ -56,13 +76,14 @@ Windows Registry Editor Version 5.00
 @="mscoree.dll"
 "ThreadingModel"="Both"
 "Class"="ADCS.SidExtension.PolicyModule.PolicyManage"
-"Assembly"="ADCS.SidExtension.PolicyModule, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6406f24a7e84ddc5"
+"Assembly"="ADCS.SidExtension.PolicyModule, Version=1.1.0.0, Culture=neutral, PublicKeyToken=6406f24a7e84ddc5"
 "RuntimeVersion"="v4.0.30319"
 "CodeBase"="file:///{0}"
 
-[HKEY_CLASSES_ROOT\CLSID\{{6369E566-25A1-456C-8CD8-C00D07E59B99}}\InprocServer32\1.0.0.0]
+[-HKEY_CLASSES_ROOT\CLSID\{{6369E566-25A1-456C-8CD8-C00D07E59B99}}\InprocServer32\1.0.0.0]
+[HKEY_CLASSES_ROOT\CLSID\{{6369E566-25A1-456C-8CD8-C00D07E59B99}}\InprocServer32\1.1.0.0]
 "Class"="ADCS.SidExtension.PolicyModule.PolicyManage"
-"Assembly"="ADCS.SidExtension.PolicyModule, Version=1.0.0.0, Culture=neutral, PublicKeyToken=6406f24a7e84ddc5"
+"Assembly"="ADCS.SidExtension.PolicyModule, Version=1.1.0.0, Culture=neutral, PublicKeyToken=6406f24a7e84ddc5"
 "RuntimeVersion"="v4.0.30319"
 "CodeBase"="file:///{0}"
 
@@ -93,7 +114,7 @@ function Copy-Registry() {
 }
 
 $finalPath = if ($Path.Exists) {
-    $Path
+    $Path.FullName
 } else {
     $pwd.Path + "\ADCS.SidExtension.PolicyModule.dll"
 }
@@ -104,11 +125,13 @@ if (!$finalPath.EndsWith("\ADCS.SidExtension.PolicyModule.dll")) {
     throw New-Object System.ArgumentException "Specified file is not Policy module file."
 }
 Register-COM $finalPath
-Copy-Registry
+if (!$RegisterOnly) {
+    Copy-Registry
 
-if ($AddToCA) {
-    Set-ItemProperty $regPolTemplate -Name "Active" -Value "PKISolutions_SID.Policy"
-    if ($Restart) {
-        Restart-Service CertSvc
+    if ($AddToCA) {
+        Set-ItemProperty $regPolTemplate -Name "Active" -Value "PKISolutions_SID.Policy"
+        if ($Restart) {
+            Restart-Service CertSvc
+        }
     }
 }

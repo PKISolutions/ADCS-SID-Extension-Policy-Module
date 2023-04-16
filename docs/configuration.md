@@ -22,7 +22,7 @@ This section configures policy module when incoming request includes user-crafte
 Action|Description
 -|-
 **PassThrough** (Default)|Passes request to underlying policy module unmodified and takes no actions on request. Underlying policy module result is returned back to CA. This may result in request to place in pending request if underlying policy module asks to do so.
-**Suppress**|Removes SID extension from request and issued certificate (if underlying policy module allows certificate issuance).
+**Suppress**|Removes SID extension and/or SID value stored in SAN extension from request and issued certificate (if underlying policy module allows certificate issuance).
 **Pending**|Puts request into pending state even if underlying policy module allows certificate issuance.
 **Deny**|Forcibly denies request.
 
@@ -33,7 +33,7 @@ This section configures policy module when incoming request falls to at least on
 Action|Description
 -|-
 **PassThrough** (Default)|Passes request to underlying policy module unmodified and takes no actions on request. Underlying policy module result is returned back to CA. This may result in request to place in pending request if underlying policy module asks to do so.
-**Suppress**|Removes SID extension from request and issued certificate (if underlying policy module allows certificate issuance). This action have effect only if incoming request contains SID extension.
+**Suppress**|Removes SID extension and/or SID value stored in SAN extension from request and issued certificate (if underlying policy module allows certificate issuance). This action have effect only if incoming request contains SID extension.
 **Pending**|Puts request into pending state even if underlying policy module allows certificate issuance.
 **Deny**|Forcibly denies request.
 
@@ -44,10 +44,10 @@ Configures logging level. Policy module implements code flow logging to a file. 
 
 ### Native Policy Module
 Configures underlying policy module to use. By default, **Windows Default** policy module is used. You can select different policy module (such as CLM) if it is installed and you want to use it along with this policy module.
-
+ se
 ### Active Directory
 This section contains configuration about how to retrieve account information from Active Directory. The following settings are available:
-- **Do not use Global Catalog**. This setting has effect only in domains with trusts (multi-domain forest or with trusts between different domains in different forests). By default (unchecked), this policy module attempts to locate account by querying global catalog (GC) installed in current domain. When checked, CA will attempt to establish a LDAP connection to trusted domain and execute account search. See [Account Lookup](https://github.com/PKISolutions/ADCS-SID-Extension-Policy-Module/blob/master/docs/account-lookup.md) page about account lookup options and details.
+- **Do not use Global Catalog**. This setting has effect only in domains with trusts (multi-domain forest or with trusts between different domains in different forests). By default (checked), this policy module will attempt to establish a LDAP connection to trusted domain and execute account search. When unchecked, policy module attempts to locate account by querying global catalog (GC) installed in current domain. See [Account Lookup](https://github.com/PKISolutions/ADCS-SID-Extension-Policy-Module/blob/master/docs/account-lookup.md) page about account lookup options and details.
 
 ### Template/Requester mapping
 This setting represent a set of mappings between offline templates and original requesters. This policy module will attempt account lookup only when request matches at least one mapping: request is against offline template in **Template** column and requester matches the requester in **Requester** column.
