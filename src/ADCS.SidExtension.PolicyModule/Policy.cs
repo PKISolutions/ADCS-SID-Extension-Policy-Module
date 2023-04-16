@@ -38,15 +38,19 @@ public class Policy : CertPolicyBase {
             // validate SID Policy Module pre-conditions:
             // - requested template is offline.
             if (validatePrerequisites(out CertTemplateInfo targetTemplate)) {
+                Logger.LogDebug("Requested template is offline. Starting request processing.");
                 // process request if all validations and prerequisites passed
                 PolicyModuleAction result =  processRequest(targetTemplate, nativeResult);
                 // we do not want to place request into pending state when it is already pending, because it will
                 // fail to successfully resolve the request.
                 if (bNewRequest == 0 && result == PolicyModuleAction.PutToPending) {
+                    Logger.LogDebug("Resulting certificate action is to pend request. However, the request is already in pending state. Instructing CA to issue the certificate.");
                     return PolicyModuleAction.Issue;
                 }
 
                 return result;
+            } else {
+                Logger.LogDebug("Requested template is not offline. Skip processing and return native policy module result.");
             }
         } catch (Exception ex) {
             Logger.LogError(ex, "[Policy::VerifyRequest]");
@@ -130,13 +134,18 @@ public class Policy : CertPolicyBase {
         Logger.LogDebug($"[Policy::VerifyRequest] Requester name: {requesterName}");
         // check if there is a requester match in template configurations. Otherwise, return underlying policy module result
         Boolean match = subset.Any(x => requesterName.Equals(x.RequesterName, StringComparison.OrdinalIgnoreCase));
+        Logger.LogDebug(match
+            ? "Found matching entry in Template/Requester table."
+            : "No matching entry was found in Template/Requester table.");
         // read all extensions from request
+        Logger.LogDebug("Reading request extensions.");
         IReadOnlyList<RequestExtension> extensionList = CertServer.GetRequestExtensions().ToList();
+        Logger.LogDebug("Found {0} extensions.", extensionList.Count);
         // first, read request extensions as follows:
         // - find location in request extensions that may contain SID extension.
         // - try to read SAN extension from request
         // - try to find subject identity in AD using corresponding alt name type (UPN for user, dnsHostName for computer)
-        RequestExtensionProcessResult extProcessResult = extensionList.ProcessRequestExtensions(templateInfo.SubjectType, match);
+        RequestExtensionProcessResult extProcessResult = extensionList.ProcessRequestExtensions(templateInfo.SubjectType, match, Logger);
         if (match) {
             // if we were unable to populate SID extension ourselves, follow the policy:
             // either, pass through (issue the cert without SID extension) or deny request.
@@ -160,6 +169,7 @@ public class Policy : CertPolicyBase {
         return nativeResult;
     }
     PolicyModuleAction enforceSidExtensionPolicy(RequestExtensionProcessResult extProcessResult, SidExtensionAction policy) {
+        Logger.LogDebug("Enforcing SID extension policy. Requested action: {0}", policy);
         switch (policy) {
             case SidExtensionAction.Suppress:
                 // if SID value is found in SID extension, disable the extension
@@ -181,18 +191,22 @@ public class Policy : CertPolicyBase {
         return PolicyModuleAction.Issue;
     }
     void disableSidExtension() {
+        Logger.LogDebug("Disabling SID extension.");
         CertServer.GetManagedPolicyModule().DisableCertificateExtension(Constants.SID_EXTENSION_OID);
     }
     void rebuildSanExtension(RequestExtensionProcessResult extProcessResult) {
         // check if SID value was found in SAN extension. If not, do nothing.
         if ((extProcessResult.SidValueLocation & SidValueLocation.SanExtension) == SidValueLocation.SanExtension) {
+            Logger.LogDebug("Attempting to rebuild the SAN extension after removing SID values.");
             // try to create SAN extension
             X509Extension? sanExtension = extProcessResult.CreateSafeSanExtension();
             if (sanExtension == null) {
+                Logger.LogDebug("SID value is the only alternative name in SAN extension. Disabling SAN extension completely.");
                 // if no safe names found (i.e. SAN contains only rogue SID value),
                 // then we effectively disable extension.
                 CertServer.GetManagedPolicyModule().DisableCertificateExtension(Constants.SAN_EXTENSION_OID);
             } else {
+                Logger.LogDebug("Overwriting SAN extension with excluded SID values.");
                 // otherwise override SAN extension by including only safe names.
                 CertServer.GetManagedPolicyModule().SetCertificateExtension(sanExtension);
             }
