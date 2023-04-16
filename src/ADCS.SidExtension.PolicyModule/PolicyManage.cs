@@ -53,9 +53,9 @@ public class PolicyManage : ICertManageModule {
             case "copyright":
                 return "Copyright (c) 2023, PKI Solutions LLC";
             case "file version":
-                return "1.0";
+                return "1.1.0";
             case "product version":
-                return "1.0";
+                return "1.1.0";
             default: return $"Unknown Property: {strPropertyName}";
         }
     }
