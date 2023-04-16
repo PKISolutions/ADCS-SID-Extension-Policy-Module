@@ -34,12 +34,13 @@ public class Policy : CertPolicyBase {
             return nativeResult;
         }
             
-        // initialize
         try {
+            // validate SID Policy Module pre-conditions:
+            // - requested template is offline.
             if (validatePrerequisites(out CertTemplateInfo targetTemplate)) {
                 // process request if all validations and prerequisites passed
                 PolicyModuleAction result =  processRequest(targetTemplate, nativeResult);
-                // we do not want place request into pending state when it is already pending, because it will
+                // we do not want to place request into pending state when it is already pending, because it will
                 // fail to successfully resolve the request.
                 if (bNewRequest == 0 && result == PolicyModuleAction.PutToPending) {
                     return PolicyModuleAction.Issue;
