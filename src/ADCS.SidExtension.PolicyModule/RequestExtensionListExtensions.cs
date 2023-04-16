@@ -21,6 +21,7 @@ public static class RequestExtensionListExtensions {
     /// <param name="extensions">A collection of request extensions.</param>
     /// <param name="subjectType">Subject type specified by certificate template.</param>
     /// <param name="searchPrincipal">Specifies whether target principal search must be executed.</param>
+    /// <param name="logger">Logger.</param>
     /// <returns>A DTO object that contains request extension processing results.</returns>
     public static RequestExtensionProcessResult ProcessRequestExtensions(this IReadOnlyList<RequestExtension> extensions, SubjectType subjectType, Boolean searchPrincipal, ILogWriter logger) {
         logWriter = logger;
