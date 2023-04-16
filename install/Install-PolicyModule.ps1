@@ -114,7 +114,7 @@ function Copy-Registry() {
 }
 
 $finalPath = if ($Path.Exists) {
-    $Path
+    $Path.FullName
 } else {
     $pwd.Path + "\ADCS.SidExtension.PolicyModule.dll"
 }
