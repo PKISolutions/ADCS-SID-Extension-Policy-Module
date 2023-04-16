@@ -66,7 +66,7 @@ The following table provides information about columns used in subsequent tables
             <td>Specifies the request issuance result</td>
             <td>
                 <ul>
-                    <li><strong>Native</strong> &mdash; native/underlying policy module result (<strong>Issue</strong>, <strong>Pending</strong> or <strong>Deny</strong>).</li>
+                    <li><strong>Native</strong> &mdash; native/underlying policy module result (<strong>Issue</strong>, <strong>Pending</strong>).</li>
                     <li><strong>Pending</strong> &mdash; overrides native/underlying policy module result and put request into pending state.</li>
                     <li><strong>Deny</strong> &mdash; overrides native/underlying policy module result and deny the request</li>
                 </ul>
