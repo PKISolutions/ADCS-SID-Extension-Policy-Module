@@ -5,94 +5,97 @@ SID Policy Module enforces its logic only when the following pre-conditions are 
 - Template is offline template, i.e. accepts subject from incoming request. If template builds subject from Active Directory, SID Policy Module forwards native policy module result back to CA and do not evaluate/modify original request.
 
 The following table provides information about columns used in subsequent tables, their descriptions and applicable values:
+
 <table>
-	<thead>
-		<tr>
-			<th>Column name</th>
-			<th>Description</th>
-			<th>Possible values</th>
-		</tr>
-	</thead>
-	<tbody>
-		<tr>
-			<td>CSR has SID Ext</td>
-			<td>Specifies whether incoming request contains SID extension.</td>
-			<td>
-			<ul>
-				<li><strong>Yes</strong></li>
-				<li><strong>No</strong></li>
-			</ul>
-			</td>
-		</tr>
-		<tr>
-			<td>CSR has SID in SAN</td>
-			<td>Specifies whether incoming request contains SID value as part of SAN extension. See <a href="https://techcommunity.microsoft.com/t5/ask-the-directory-services-team/preview-of-san-uri-for-certificate-strong-mapping-for-kb5014754/ba-p/3789785">SAN URI for Certificate Strong Mapping for KB5014754</a> for more information.</td>
-			<td>
-			<ul>
-				<li><strong>Yes</strong></li>
-				<li><strong>No</strong></li>
-			</ul>
-			</td>
-		</tr>
-		<tr>
-			<td>Trusted SID Policy</td>
-			<td>Specifies Trusted SID policy configuration. This setting applies when incoming request matches any Template/Requester map entry.</td>
-			<td>
-			<ul>
-				<li><strong>PassThrough</strong></li>
-				<li><strong>Pending</strong></li>
-				<li><strong>Suppress</strong></li>
-				<li><strong>Deny</strong></li>
-			</ul>
-			</td>
-		</tr>
-		<tr>
-			<td>Untrusted SID Policy</td>
-			<td>Specifies Untrusted SID policy configuration.&nbsp;This setting applies when incoming request doesn&#39;t match any Template/Requester map entry.</td>
-			<td>
-			<ul>
-				<li><strong>PassThrough</strong></li>
-				<li><strong>Pending</strong></li>
-				<li><strong>Suppress</strong></li>
-				<li><strong>Deny</strong></li>
-			</ul>
-			</td>
-		</tr>
-		<tr>
-			<td>Request Result</td>
-			<td>Specifies the request issuance result</td>
-			<td>
-			<ul>
-				<li><strong>Native</strong> &mdash; native/underlying policy module result (<strong>Issue</strong>, <strong>Pending</strong> or <strong>Deny</strong>).</li>
-				<li><strong>Pending</strong> &mdash; overrides native/underlying policy module result and put request into pending state.</li>
-				<li><strong>Deny</strong> &mdash; overrides native/underlying policy module result and deny the request</li>
-			</ul>
-			</td>
-		</tr>
-		<tr>
-			<td>SID Extension</td>
-			<td>Specifies the SID extension state in resulting certificate</td>
-			<td>
-			<ul>
-				<li><strong>*</strong> &mdash; does not apply, request is denied.</li>
-				<li><strong>Unchanged</strong> &mdash; SID extension from request (if presented) is passed as is to issued certificate.</li>
-				<li><strong>Overwrite</strong> &mdash; SID extension value from request is discarded and overwritten by this policy module.</li>
-				<li><strong>Disable</strong> &mdash; forcibly disables (removes) SID extension in request.</li>
-			</ul>
-			</td>
-		</tr>
-		<tr>
-			<td>SAN Extension</td>
-			<td>Specifies the SAN extension state in issued certificate</td>
-			<td>
-			<ul>
-				<li><strong>*</strong> &mdash; does not apply, request is denied.</li>
-				<li><strong>Unchanged</strong> &mdash; SAN extension from request (if presented) is passed as is to issued certificate.</li>
-				<li><strong>Truncate</strong> &mdash; modifies SAN extension in incoming request by removing SID value (URL name type) name. If SID value is the only entry in SAN extension, SAN extension is forcibly disabled.</li>
-			</ul>
-			</td>
-		</tr>
-	</tbody>
+    <thead>
+        <tr>
+            <th>Column name</th>
+            <th>Description</th>
+            <th>Possible values</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>CSR has SID Ext</td>
+            <td>Specifies whether incoming request contains SID extension.</td>
+            <td>
+                <ul>
+                    <li><strong>Yes</strong></li>
+                    <li><strong>No</strong></li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>CSR has SID in SAN</td>
+            <td>Specifies whether incoming request contains SID value as part of SAN extension. See <a href="https://techcommunity.microsoft.com/t5/ask-the-directory-services-team/preview-of-san-uri-for-certificate-strong-mapping-for-kb5014754/ba-p/3789785">SAN URI for Certificate Strong Mapping for KB5014754</a> for more information.</td>
+            <td>
+                <ul>
+                    <li><strong>Yes</strong></li>
+                    <li><strong>No</strong></li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Trusted SID Policy</td>
+            <td>Specifies Trusted SID policy configuration. This setting applies when incoming request matches any Template/Requester map entry.</td>
+            <td>
+                <ul>
+                    <li><strong>*</strong> — any setting</li>
+                    <li><strong>PassThrough</strong></li>
+                    <li><strong>Pending</strong></li>
+                    <li><strong>Suppress</strong></li>
+                    <li><strong>Deny</strong></li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Untrusted SID Policy</td>
+            <td>Specifies Untrusted SID policy configuration.&nbsp;This setting applies when incoming request doesn&#39;t match any Template/Requester map entry.</td>
+            <td>
+                <ul>
+                    <li><strong>*</strong> — any setting</li>
+                    <li><strong>PassThrough</strong></li>
+                    <li><strong>Pending</strong></li>
+                    <li><strong>Suppress</strong></li>
+                    <li><strong>Deny</strong></li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>Request Result</td>
+            <td>Specifies the request issuance result</td>
+            <td>
+                <ul>
+                    <li><strong>Native</strong> &mdash; native/underlying policy module result (<strong>Issue</strong>, <strong>Pending</strong> or <strong>Deny</strong>).</li>
+                    <li><strong>Pending</strong> &mdash; overrides native/underlying policy module result and put request into pending state.</li>
+                    <li><strong>Deny</strong> &mdash; overrides native/underlying policy module result and deny the request</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>SID Extension</td>
+            <td>Specifies the SID extension state in resulting certificate</td>
+            <td>
+                <ul>
+                    <li><strong>*</strong> &mdash; does not apply, request is denied.</li>
+                    <li><strong>Unchanged</strong> &mdash; SID extension from request (if presented) is passed as is to issued certificate.</li>
+                    <li><strong>Overwrite</strong> &mdash; SID extension value from request is discarded and overwritten by this policy module.</li>
+                    <li><strong>Disable</strong> &mdash; forcibly disables (removes) SID extension in request.</li>
+                </ul>
+            </td>
+        </tr>
+        <tr>
+            <td>SAN Extension</td>
+            <td>Specifies the SAN extension state in issued certificate</td>
+            <td>
+                <ul>
+                    <li><strong>*</strong> &mdash; does not apply, request is denied.</li>
+                    <li><strong>Unchanged</strong> &mdash; SAN extension from request (if presented) is passed as is to issued certificate.</li>
+                    <li><strong>Truncate</strong> &mdash; modifies SAN extension in incoming request by removing SID value (URL name type) name. If SID value is the only entry in SAN extension, SAN extension is forcibly disabled.</li>
+                </ul>
+            </td>
+        </tr>
+    </tbody>
 </table>
 
 # Behaviors
