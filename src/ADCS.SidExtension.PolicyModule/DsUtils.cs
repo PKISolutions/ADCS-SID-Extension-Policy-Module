@@ -57,8 +57,19 @@ static class DsUtils {
 
         if (name.Contains("@")) {
             // upn
-            Int32 splitIndex = name.IndexOf("@", StringComparison.Ordinal);
-            domainTokens = name.Substring(splitIndex + 1).Split('.');
+            String domainPart = name.Substring(splitIndex + 1);
+            using (var forest = Forest.GetCurrentForest()) {
+                using (var domain = forest.Domains.FirstOrDefault(d => d.Forest.Name.Equals(domainPart, StringComparison.OrdinalIgnoreCase))) {
+                    if (domain != null)
+                    {
+                        domainTokens = domain.Name.Split('.');
+                    }
+                    else
+                    {
+                        domainTokens = null;
+                    }
+                }
+            }
         } else {
             // skip host part and return domain part
             domainTokens = name.Split('.').Skip(1).ToArray();
