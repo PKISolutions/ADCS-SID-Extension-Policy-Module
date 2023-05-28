@@ -57,17 +57,17 @@ static class DsUtils {
 
         if (name.Contains("@")) {
             // upn
+            Int32 splitIndex = name.IndexOf("@", StringComparison.Ordinal);
+            //domainTokens = name.Substring(splitIndex + 1).Split('.');
             String domainPart = name.Substring(splitIndex + 1);
-            using (var forest = Forest.GetCurrentForest()) {
-                using (var domain = forest.Domains.FirstOrDefault(d => d.Forest.Name.Equals(domainPart, StringComparison.OrdinalIgnoreCase))) {
-                    if (domain != null)
-                    {
+            using (var forest = Forest.GetCurrentForest())
+            {
+                foreach (Domain domain in forest.Domains)
+                {
+                    if (domain.GetDirectoryEntry().Properties["uPNSuffixes"].Contains(domainPart)) {
                         domainTokens = domain.Name.Split('.');
-                    }
-                    else
-                    {
-                        domainTokens = null;
-                    }
+                    } else {
+                        domainTokens = null
                 }
             }
         } else {
