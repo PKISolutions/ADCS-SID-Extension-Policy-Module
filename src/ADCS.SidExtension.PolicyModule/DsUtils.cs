@@ -67,7 +67,7 @@ static class DsUtils {
                     if (domain.GetDirectoryEntry().Properties["uPNSuffixes"].Contains(domainPart)) {
                         domainTokens = domain.Name.Split('.');
                     } else {
-                        domainTokens = null
+                        domainTokens = null;
                 }
             }
         } else {
