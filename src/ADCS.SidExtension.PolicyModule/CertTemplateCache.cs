@@ -24,7 +24,10 @@ static class CertTemplateCache {
     public static void Start(ILogWriter logger) {
         if (timer == null) {
             localLogger = logger;
-            timerPeriod = Convert.ToInt64(TimeSpan.FromMinutes(1).TotalMilliseconds);
+            // template cache is updated every 30 sec, so we shouldn't pick the period that is a multiplier
+            // of 30 to avoid very unfortunate synchronization when cache is updated at the same time
+            // when we read it.
+            timerPeriod = Convert.ToInt64(TimeSpan.FromSeconds(59).TotalMilliseconds);
             timer = new Timer(onTimerTrigger, null, 0, timerPeriod);
         }
     }
@@ -55,17 +58,23 @@ static class CertTemplateCache {
                 localLogger.LogDebug("[CertTemplateCache::ReloadCache] Template cache key is null");
                 return false;
             }
-            foreach (String subKeyName in key.GetSubKeyNames()) {
+
+            // read them into an array first rather than doing 'foreach (... in key.GetSubKeyNames)',
+            // because registry can be modified by external process while we are enumerating and cause
+            // duplicates. Registry is not thread-safe.
+            String[] subKeyNames = key.GetSubKeyNames();
+
+            foreach (String subKeyName in subKeyNames) {
                 RegistryKey subKey = key.OpenSubKey(subKeyName);
                 if (subKey == null) {
-                    localLogger.LogDebug($"[CertTemplateCache::ReloadCache] Subkey '{subKeyName}' is null");
+                    localLogger.LogDebug("[CertTemplateCache::ReloadCache] Subkey '{0}' is null", subKeyName);
                     continue;
                 }
                         
                 // read template OID
                 String[] templateOid = (String[])subKey.GetValue("msPKI-Cert-Template-OID", Array.Empty<String>());
                 if (!templateOid.Any()) {
-                    localLogger.LogDebug($"[CertTemplateCache::ReloadCache] Failed to read template oid for '{subKeyName}'");
+                    localLogger.LogDebug("[CertTemplateCache::ReloadCache] Failed to read template oid for '{0}'", subKeyName);
                     continue;
                 }
                         
@@ -85,7 +94,11 @@ static class CertTemplateCache {
                 Boolean isOffline = (nameFlags & CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT) == CT_FLAG_ENROLLEE_SUPPLIES_SUBJECT;
 
                 // insert into cache
-                _templateCache.Add(identifier, new CertTemplateInfo(displayName, templateOid[0], subjectType, isOffline));
+                if (_templateCache.ContainsKey(identifier)) {
+                    localLogger.LogDebug("An attempt to insert a duplicate. {0}", identifier);
+                } else {
+                    _templateCache.Add(identifier, new CertTemplateInfo(displayName, templateOid[0], subjectType, isOffline));
+                }
             }
 
             return true;
