@@ -24,9 +24,6 @@ static class CertTemplateCache {
     public static void Start(ILogWriter logger) {
         if (timer == null) {
             localLogger = logger;
-            // template cache is updated every 30 sec, so we shouldn't pick the period that is a multiplier
-            // of 30 to avoid very unfortunate synchronization when cache is updated at the same time
-            // when we read it.
             timerPeriod = Convert.ToInt64(TimeSpan.FromSeconds(59).TotalMilliseconds);
             timer = new Timer(onTimerTrigger, null, 0, timerPeriod);
         }
