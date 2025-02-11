@@ -98,8 +98,8 @@ static class CertTemplateCache {
 
     public static CertTemplateInfo GetTemplateInfo(String templateId) {
         lock (_locker) {
-            return _templateCache.ContainsKey(templateId)
-                ? _templateCache[templateId]
+            return _templateCache.TryGetValue(templateId, out CertTemplateInfo templateInfo)
+                ? templateInfo
                 : null;
         }
     }
