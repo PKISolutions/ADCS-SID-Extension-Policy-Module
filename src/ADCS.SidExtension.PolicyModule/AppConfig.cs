@@ -111,7 +111,7 @@ public class AppConfig : RegistryService {
                         continue;
                     }
 
-                    retValue.Add(TemplateRequesterMap.FromMap(tokens[0], tokens[1]));
+                    retValue.Add(new TemplateRequesterMap(tokens[0], tokens[1]));
                 }
             }
             

@@ -19,7 +19,7 @@ public class Policy : CertPolicyBase {
 
     List<TemplateRequesterMap> map = new();
     SidExtensionAction trustedSidPolicy, untrustedSidPolicy;
-    ICertManageModule policyManage;
+    ICertManageModule? policyManage;
 
     public Policy() : base(new LogWriter("SID.Policy", LogLevel.Error)) {
         _config = new AppConfig("PKISolutions_SID.Policy", Logger);
@@ -82,7 +82,7 @@ public class Policy : CertPolicyBase {
     }
     /// <inheritdoc />
     public override ICertManageModule GetManageModule() {
-        if (policyManage == null) {
+        if (policyManage is null) {
             return policyManage = new PolicyManage(Logger, _config);
         }
 
@@ -96,7 +96,7 @@ public class Policy : CertPolicyBase {
     /// <returns>
     ///     <strong>True</strong> if request should be processed by policy 
     /// </returns>
-    Boolean validatePrerequisites(out CertTemplateInfo targetTemplate) {
+    Boolean validatePrerequisites(out CertTemplateInfo? targetTemplate) {
         targetTemplate = null;
         Logger.LogTrace("[Policy::validatePrerequisites] Retrieve template name.");
         // read template name/OID from incoming request
@@ -110,7 +110,7 @@ public class Policy : CertPolicyBase {
         // get requested template info from cache
         targetTemplate = CertTemplateCache.GetTemplateInfo(templateName);
         // do basic validations
-        if (targetTemplate == null) {
+        if (targetTemplate is null) {
             Logger.LogDebug("[Policy::validatePrerequisites] Requested template '{0}' is not found in local cache. Skipping.", templateName);
 
             return false;
@@ -200,7 +200,7 @@ public class Policy : CertPolicyBase {
             Logger.LogDebug("Attempting to rebuild the SAN extension after removing SID values.");
             // try to create SAN extension
             X509Extension? sanExtension = extProcessResult.CreateSafeSanExtension();
-            if (sanExtension == null) {
+            if (sanExtension is null) {
                 Logger.LogDebug("SID value is the only alternative name in SAN extension. Disabling SAN extension completely.");
                 // if no safe names found (i.e. SAN contains only rogue SID value),
                 // then we effectively disable extension.

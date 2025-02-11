@@ -33,7 +33,7 @@ static class DsUtils {
             ? getDomainSearchRoot(name)
             : getGCSearchRoot();
 
-        SearchResult de = searcher.FindOne();
+        SearchResult? de = searcher.FindOne();
         if (de?.Properties["objectSid"][0] is not Byte[] sidBytes) {
             return null;
         }

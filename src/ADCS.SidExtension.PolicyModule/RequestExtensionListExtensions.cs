@@ -9,7 +9,7 @@ namespace ADCS.SidExtension.PolicyModule;
 
 public static class RequestExtensionListExtensions {
     const String SAN_SID_PATTERN = @"microsoft\.com,2022-09-14:sid";
-    static ILogWriter logWriter;
+    static ILogWriter? logWriter;
 
     /// <summary>
     /// Processes incoming request extensions. This method performs multiple tasks in one run:
@@ -24,7 +24,7 @@ public static class RequestExtensionListExtensions {
     /// <param name="logger">Logger.</param>
     /// <returns>A DTO object that contains request extension processing results.</returns>
     public static RequestExtensionProcessResult ProcessRequestExtensions(this IReadOnlyList<RequestExtension> extensions, SubjectType subjectType, Boolean searchPrincipal, ILogWriter logger) {
-        logWriter = logger;
+        logWriter ??= logger;
         var retValue = new RequestExtensionProcessResult();
         if (extensions.Any(x => Constants.SID_EXTENSION_OID.Equals(x.ExtensionName.Value))) {
             logger.LogDebug("Found SID extension in request.");
@@ -59,7 +59,7 @@ public static class RequestExtensionListExtensions {
                 if (altName.Type == AlternativeNameType.XCN_CERT_ALT_NAME_URL) {
                     // attempt to match URL name type value against pattern
                     if (Regex.IsMatch(altName.strValue, SAN_SID_PATTERN, RegexOptions.Compiled | RegexOptions.IgnoreCase)) {
-                        // if match, add SID value location and break the loop
+                        // add SID value location and break the loop if match
                         if (isFirstSidValueInSanOccurrence) {
                             logger.LogDebug("Found SID value in SAN extension in request.");
                             isFirstSidValueInSanOccurrence = false;
@@ -78,27 +78,24 @@ public static class RequestExtensionListExtensions {
     }
 
     static void readPrincipalName(IX509ExtensionAlternativeNames san, SubjectType subjectType, RequestExtensionProcessResult retValue) {
-        if (san == null) {
-            return;
-        }
         // pick appropriate SAN name type depending on subject type in template.
         // UPN for user templates and DNS name for machine templates
         AlternativeNameType altNameType;
         switch (subjectType) {
             case SubjectType.User:
                 altNameType = AlternativeNameType.XCN_CERT_ALT_NAME_USER_PRINCIPLE_NAME;
-                logWriter.LogDebug("Executing principal search from UPN.");
+                logWriter!.LogDebug("Executing principal search from UPN.");
                 break;
             case SubjectType.Computer:
                 altNameType = AlternativeNameType.XCN_CERT_ALT_NAME_DNS_NAME;
-                logWriter.LogDebug("Executing principal search from DNS.");
+                logWriter!.LogDebug("Executing principal search from DNS.");
                 break;
             default:
                 return;
         }
         // try to find desired name type. We read only first occurrence of desired name type 
-        IAlternativeName altName = san.AlternativeNames.Cast<IAlternativeName>().FirstOrDefault(x => x.Type == altNameType);
-        if (altName == null) {
+        IAlternativeName? altName = san.AlternativeNames.Cast<IAlternativeName>().FirstOrDefault(x => x.Type == altNameType);
+        if (altName is null) {
             logWriter.LogDebug("No matching alternative name found in SAN extension.");
         } else {
             retValue.PrincipalName = altName.strValue;

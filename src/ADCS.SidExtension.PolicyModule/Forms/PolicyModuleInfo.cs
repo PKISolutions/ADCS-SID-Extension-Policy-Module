@@ -5,7 +5,7 @@ using ADCS.CertMod.Managed.Policy;
 namespace ADCS.SidExtension.PolicyModule.Forms;
 
 class PolicyModuleInfo {
-    static readonly Regex _regex = new Regex(@"\.Policy\.(\d+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    static readonly Regex _regex = new(@"\.Policy\.(\d+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     PolicyModuleInfo(String progID) {
         Name = ProgID = progID;
@@ -14,7 +14,7 @@ class PolicyModuleInfo {
     public String Name { get; set; }
     public String ProgID { get; }
 
-    public override Boolean Equals(Object obj) {
+    public override Boolean Equals(Object? obj) {
         return !ReferenceEquals(null, obj) && (ReferenceEquals(this, obj) ||
                                                obj.GetType() == GetType() && Equals((PolicyModuleInfo)obj));
     }
@@ -31,7 +31,7 @@ class PolicyModuleInfo {
 
         try {
             var comType = Type.GetTypeFromProgID(progID, true);
-            if (!(Activator.CreateInstance(comType) is ICertPolicy policyModule)) {
+            if (Activator.CreateInstance(comType) is not ICertPolicy policyModule) {
                 return policyInfo;
             }
 

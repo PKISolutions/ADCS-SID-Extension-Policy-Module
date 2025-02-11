@@ -16,13 +16,13 @@ static class CertTemplateCache {
     // - cache is not rebuilt while it is in read-access
     static readonly Object _locker = new();
     static readonly IDictionary<String, CertTemplateInfo> _templateCache = new Dictionary<String, CertTemplateInfo>();
-    static ILogWriter localLogger;
+    static ILogWriter? localLogger;
         
-    static Timer timer;
+    static Timer? timer;
     static Int64 timerPeriod;
 
     public static void Start(ILogWriter logger) {
-        if (timer == null) {
+        if (timer is null) {
             localLogger = logger;
             timerPeriod = Convert.ToInt64(TimeSpan.FromMinutes(1).TotalMilliseconds);
             timer = new Timer(onTimerTrigger, null, 0, timerPeriod);
@@ -35,7 +35,7 @@ static class CertTemplateCache {
     static void onTimerTrigger(Object state) {
         Int32 retryAttempts = 3;
         // stop timer.
-        timer.Change(Timeout.Infinite, Timeout.Infinite);
+        timer!.Change(Timeout.Infinite, Timeout.Infinite);
         
         lock (_locker) {
             // sometimes we can hit a moment when CA rebuilds the cache and registry key doesn't exist yet
@@ -50,22 +50,22 @@ static class CertTemplateCache {
     static Boolean rebuildCache() {
         _templateCache.Clear();
         try {
-            using RegistryKey key = Registry.LocalMachine.OpenSubKey(REG_TMPL_CACHE_PATH);
-            if (key == null) {
-                localLogger.LogDebug("[CertTemplateCache::ReloadCache] Template cache key is null");
+            using RegistryKey? key = Registry.LocalMachine.OpenSubKey(REG_TMPL_CACHE_PATH);
+            if (key is null) {
+                localLogger!.LogDebug("[CertTemplateCache::ReloadCache] Template cache key is null");
                 return false;
             }
             foreach (String subKeyName in key.GetSubKeyNames()) {
-                RegistryKey subKey = key.OpenSubKey(subKeyName);
-                if (subKey == null) {
-                    localLogger.LogDebug($"[CertTemplateCache::ReloadCache] Subkey '{subKeyName}' is null");
+                RegistryKey? subKey = key.OpenSubKey(subKeyName);
+                if (subKey is null) {
+                    localLogger!.LogDebug($"[CertTemplateCache::ReloadCache] Subkey '{subKeyName}' is null");
                     continue;
                 }
                         
                 // read template OID
                 String[] templateOid = (String[])subKey.GetValue("msPKI-Cert-Template-OID", Array.Empty<String>());
                 if (!templateOid.Any()) {
-                    localLogger.LogDebug($"[CertTemplateCache::ReloadCache] Failed to read template oid for '{subKeyName}'");
+                    localLogger!.LogDebug($"[CertTemplateCache::ReloadCache] Failed to read template oid for '{subKeyName}'");
                     continue;
                 }
                         
@@ -90,15 +90,15 @@ static class CertTemplateCache {
 
             return true;
         } catch (Exception ex) {
-            localLogger.LogError(ex, "[CertTemplateCache::ReloadCache]");
+            localLogger!.LogError(ex, "[CertTemplateCache::ReloadCache]");
         }
 
         return false;
     }
 
-    public static CertTemplateInfo GetTemplateInfo(String templateId) {
+    public static CertTemplateInfo? GetTemplateInfo(String templateId) {
         lock (_locker) {
-            return _templateCache.TryGetValue(templateId, out CertTemplateInfo templateInfo)
+            return _templateCache.TryGetValue(templateId, out CertTemplateInfo? templateInfo)
                 ? templateInfo
                 : null;
         }

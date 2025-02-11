@@ -31,9 +31,6 @@ class AsnUtils {
     /// <returns>Wrapped encoded byte array.</returns>
     /// <remarks>If <strong>rawData</strong> is null, an empty tag is encoded.</remarks>
     static Byte[] encode(Byte[] rawData, Byte enclosingTag) {
-        if (rawData == null) {
-            return new Byte[] { enclosingTag, 0 };
-        }
         Byte[] retValue;
         if (rawData.Length < 128) {
             retValue = new Byte[rawData.Length + 2];

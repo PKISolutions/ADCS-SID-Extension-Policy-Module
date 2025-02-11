@@ -15,7 +15,7 @@ class CertTemplateInfo {
     public SubjectType SubjectType { get; }
     public Boolean IsOffline { get; }
 
-    public override Boolean Equals(Object obj) {
+    public override Boolean Equals(Object? obj) {
         return !ReferenceEquals(null, obj) && (ReferenceEquals(this, obj) ||
                                                obj.GetType() == GetType() && Equals((CertTemplateInfo)obj));
     }
