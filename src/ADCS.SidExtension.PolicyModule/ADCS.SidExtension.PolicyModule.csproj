@@ -43,15 +43,15 @@
     <AssemblyOriginatorKeyFile>StrongName.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <SourceRoot Include="$(MSBuildThisFileDirectory)/"/>
+    <SourceRoot Include="$(MSBuildThisFileDirectory)/" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="ADCS.CertMod.Managed, Version=1.3.1.0, Culture=neutral, PublicKeyToken=6406f24a7e84ddc5, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\ADCS.CertMod.Managed.1.3.1\lib\net472\ADCS.CertMod.Managed.dll</HintPath>
+    <Reference Include="ADCS.CertMod.Managed, Version=2.0.0.0, Culture=neutral, PublicKeyToken=6406f24a7e84ddc5, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\ADCS.CertMod.Managed.2.0.0\lib\net472\ADCS.CertMod.Managed.dll</HintPath>
     </Reference>
     <Reference Include="CERTCLILib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=d5db31a0b7668d81, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\ADCS.CertMod.Managed.1.3.1\lib\net472\CERTCLILib.dll</HintPath>
-      <EmbedInteropTypes>False</EmbedInteropTypes>
+      <HintPath>..\..\packages\ADCS.CertMod.Managed.2.0.0\lib\net472\CERTCLILib.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

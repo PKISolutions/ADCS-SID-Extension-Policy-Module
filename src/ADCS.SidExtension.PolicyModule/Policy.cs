@@ -14,7 +14,6 @@ namespace ADCS.SidExtension.PolicyModule;
 [ProgId("PKISolutions_SID.Policy")]
 [Guid("4335db31-edc5-4277-b1ee-25b88a05192c")]
 public class Policy : CertPolicyBase {
-
     readonly AppConfig _config;
 
     List<TemplateRequesterMap> map = [];
@@ -25,25 +24,22 @@ public class Policy : CertPolicyBase {
         _config = new AppConfig("PKISolutions_SID.Policy", Logger);
     }
 
-    /// <inheritdoc />
-    public override PolicyModuleAction VerifyRequest(String strConfig, Int32 Context, Int32 bNewRequest, Int32 Flags) {
-        // read native result from underlying policy module
-        PolicyModuleAction nativeResult = base.VerifyRequest(strConfig, Context, bNewRequest, Flags);
+    protected override PolicyModuleAction VerifyRequest(CertServerModule certServer, PolicyModuleAction nativeResult, Boolean bNewRequest) {
         // if native policy module did not pass the request, follow its decision
         if (nativeResult != PolicyModuleAction.Issue && nativeResult != PolicyModuleAction.PutToPending) {
             return nativeResult;
         }
-            
+        
         try {
             // validate SID Policy Module pre-conditions:
             // - requested template is offline.
-            if (validatePrerequisites(out CertTemplateInfo targetTemplate)) {
+            if (validatePrerequisites(certServer, out CertTemplateInfo targetTemplate)) {
                 Logger.LogDebug("Requested template is offline. Starting request processing.");
                 // process request if all validations and prerequisites passed
-                PolicyModuleAction result =  processRequest(targetTemplate, nativeResult);
+                PolicyModuleAction result = processRequest(certServer, targetTemplate, nativeResult);
                 // we do not want to place request into pending state when it is already pending, because it will
                 // fail to successfully resolve the request.
-                if (bNewRequest == 0 && result == PolicyModuleAction.PutToPending) {
+                if (!bNewRequest && result == PolicyModuleAction.PutToPending) {
                     Logger.LogDebug("Resulting certificate action is to pend request. However, the request is already in pending state. Instructing CA to issue the certificate.");
                     return PolicyModuleAction.Issue;
                 }
@@ -55,7 +51,7 @@ public class Policy : CertPolicyBase {
         } catch (Exception ex) {
             Logger.LogError(ex, "[Policy::VerifyRequest]");
         } finally {
-            CertServer.FinalizeContext();
+            certServer.FinalizeContext();
         }
 
         return nativeResult;
@@ -92,15 +88,16 @@ public class Policy : CertPolicyBase {
     /// <summary>
     /// Determines whether current request should be additionally processed by policy module.
     /// </summary>
+    /// <param name="certServer">A cert server module associated with the current request.</param>
     /// <param name="targetTemplate"></param>
     /// <returns>
     ///     <strong>True</strong> if request should be processed by policy 
     /// </returns>
-    Boolean validatePrerequisites(out CertTemplateInfo? targetTemplate) {
+    Boolean validatePrerequisites(CertServerModule certServer, out CertTemplateInfo? targetTemplate) {
         targetTemplate = null;
         Logger.LogTrace("[Policy::validatePrerequisites] Retrieve template name.");
         // read template name/OID from incoming request
-        String templateName = CertServer.GetCertificateTemplate() ?? String.Empty;
+        String templateName = certServer.GetCertificateTemplate() ?? String.Empty;
         if (String.IsNullOrWhiteSpace(templateName)) {
             Logger.LogTrace("[Policy::validatePrerequisites] Template name is empty.");
 
@@ -124,13 +121,13 @@ public class Policy : CertPolicyBase {
 
         return true;
     }
-    PolicyModuleAction processRequest(CertTemplateInfo templateInfo, PolicyModuleAction nativeResult) {
+    PolicyModuleAction processRequest(CertServerModule certServer, CertTemplateInfo templateInfo, PolicyModuleAction nativeResult) {
         // read configuration entries that contain requested template.
         // single template supports multiple configurations, so return value is a collection of
         // requested template configurations
         IEnumerable<TemplateRequesterMap> subset = map.Where(x => templateInfo.OID.Equals(x.TemplateOid)).ToList();
         // read requester name from incoming request
-        String requesterName = CertServer.GetRequesterName();
+        String requesterName = certServer.GetRequesterName();
         Logger.LogDebug($"[Policy::VerifyRequest] Requester name: {requesterName}");
         // check if there is a requester match in template configurations. Otherwise, return underlying policy module result
         Boolean match = subset.Any(x => requesterName.Equals(x.RequesterName, StringComparison.OrdinalIgnoreCase));
@@ -139,7 +136,7 @@ public class Policy : CertPolicyBase {
             : "No matching entry was found in Template/Requester table.");
         // read all extensions from request
         Logger.LogDebug("Reading request extensions.");
-        IReadOnlyList<RequestExtension> extensionList = CertServer.GetRequestExtensions().ToList();
+        IReadOnlyList<RequestExtension> extensionList = certServer.GetRequestExtensions().ToList();
         Logger.LogDebug("Found {0} extensions.", extensionList.Count);
         // first, read request extensions as follows:
         // - find location in request extensions that may contain SID extension.
@@ -149,13 +146,13 @@ public class Policy : CertPolicyBase {
         if (match) {
             // if we were unable to populate SID extension ourselves, follow the policy:
             // either, pass through (issue the cert without SID extension) or deny request.
-            if (!addSidToCertificate(extProcessResult, templateInfo.SubjectType)) {
-                return enforceSidExtensionPolicy(extProcessResult, trustedSidPolicy);
+            if (!addSidToCertificate(certServer, extProcessResult, templateInfo.SubjectType)) {
+                return enforceSidExtensionPolicy(certServer, extProcessResult, trustedSidPolicy);
             }
         } else {
             // if there is no valid match for template and requester, then enforce untrusted SID extension policy
             // if necessary.
-            PolicyModuleAction result = enforceSidExtensionPolicy(extProcessResult, untrustedSidPolicy);
+            PolicyModuleAction result = enforceSidExtensionPolicy(certServer, extProcessResult, untrustedSidPolicy);
             // if native policy module asks to pend request and this policy module is configured to issue
             // such request, we shall return native policy module result. In other words, when untrusted SID extension
             // policy is set to 'Issue', we are transparent to CA and forward response from native policy module.
@@ -168,18 +165,18 @@ public class Policy : CertPolicyBase {
 
         return nativeResult;
     }
-    PolicyModuleAction enforceSidExtensionPolicy(RequestExtensionProcessResult extProcessResult, SidExtensionAction policy) {
+    PolicyModuleAction enforceSidExtensionPolicy(CertServerModule certServer, RequestExtensionProcessResult extProcessResult, SidExtensionAction policy) {
         Logger.LogDebug("Enforcing SID extension policy. Requested action: {0}", policy);
         switch (policy) {
             case SidExtensionAction.Suppress:
                 // if SID value is found in SID extension, disable the extension
                 if ((extProcessResult.SidValueLocation & SidValueLocation.SidExtension) == SidValueLocation.SidExtension) {
-                    disableSidExtension();
+                    disableSidExtension(certServer);
                 }
                 // if SID value is found in SAN extension, rebuild SAN extension by excluding rogue SID names.
                 if ((extProcessResult.SidValueLocation & SidValueLocation.SanExtension) == SidValueLocation.SanExtension) {
                     // re-create SAN extension
-                    rebuildSanExtension(extProcessResult);
+                    rebuildSanExtension(certServer, extProcessResult);
                 }
                 break;
             case SidExtensionAction.Deny:
@@ -190,11 +187,11 @@ public class Policy : CertPolicyBase {
 
         return PolicyModuleAction.Issue;
     }
-    void disableSidExtension() {
+    void disableSidExtension(CertServerModule certServer) {
         Logger.LogDebug("Disabling SID extension.");
-        CertServer.GetManagedPolicyModule().DisableCertificateExtension(Constants.SID_EXTENSION_OID);
+        certServer.GetManagedPolicyModule().DisableCertificateExtension(Constants.SID_EXTENSION_OID);
     }
-    void rebuildSanExtension(RequestExtensionProcessResult extProcessResult) {
+    void rebuildSanExtension(CertServerModule certServer, RequestExtensionProcessResult extProcessResult) {
         // check if SID value was found in SAN extension. If not, do nothing.
         if ((extProcessResult.SidValueLocation & SidValueLocation.SanExtension) == SidValueLocation.SanExtension) {
             Logger.LogDebug("Attempting to rebuild the SAN extension after removing SID values.");
@@ -204,16 +201,16 @@ public class Policy : CertPolicyBase {
                 Logger.LogDebug("SID value is the only alternative name in SAN extension. Disabling SAN extension completely.");
                 // if no safe names found (i.e. SAN contains only rogue SID value),
                 // then we effectively disable extension.
-                CertServer.GetManagedPolicyModule().DisableCertificateExtension(Constants.SAN_EXTENSION_OID);
+                certServer.GetManagedPolicyModule().DisableCertificateExtension(Constants.SAN_EXTENSION_OID);
             } else {
                 Logger.LogDebug("Overwriting SAN extension with excluded SID values.");
                 // otherwise override SAN extension by including only safe names.
-                CertServer.GetManagedPolicyModule().SetCertificateExtension(sanExtension);
+                certServer.GetManagedPolicyModule().SetCertificateExtension(sanExtension);
             }
         }
     }
 
-    Boolean addSidToCertificate(RequestExtensionProcessResult extensionProcessResult, SubjectType subjectType) {
+    Boolean addSidToCertificate(CertServerModule certServer, RequestExtensionProcessResult extensionProcessResult, SubjectType subjectType) {
         if (!extensionProcessResult.HasSanExtension) {
             Logger.LogDebug("SAN extension not found. Skipping.");
 
@@ -241,9 +238,9 @@ public class Policy : CertPolicyBase {
         }
         // insert SID extension into dummy certificate
         X509Extension extension = AsnUtils.EncodeSidExtension(sid);
-        CertServer.GetManagedPolicyModule().SetCertificateExtension(extension);
+        certServer.GetManagedPolicyModule().SetCertificateExtension(extension);
         // rebuild SAN extension if necessary to exclude rogue SID value from SAN extension.
-        rebuildSanExtension(extensionProcessResult);
+        rebuildSanExtension(certServer, extensionProcessResult);
 
         return true;
     }
