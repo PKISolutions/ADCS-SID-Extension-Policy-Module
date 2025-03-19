@@ -17,7 +17,7 @@ public class Policy : CertPolicyBase {
 
     readonly AppConfig _config;
 
-    List<TemplateRequesterMap> map = new();
+    List<TemplateRequesterMap> map = [];
     SidExtensionAction trustedSidPolicy, untrustedSidPolicy;
     ICertManageModule? policyManage;
 

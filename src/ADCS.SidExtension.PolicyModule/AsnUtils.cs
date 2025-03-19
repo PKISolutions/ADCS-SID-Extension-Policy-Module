@@ -6,7 +6,7 @@ using System.Text;
 namespace ADCS.SidExtension.PolicyModule;
 
 class AsnUtils {
-    static readonly Byte[] _nestedOidBytes = { 6, 10, 43, 6, 1, 4, 1, 130, 55, 25, 2, 1 };
+    static readonly Byte[] _nestedOidBytes = [6, 10, 43, 6, 1, 4, 1, 130, 55, 25, 2, 1];
     /// <summary>
     /// Encodes NTDS CA Security extension from a SID string.
     /// </summary>
