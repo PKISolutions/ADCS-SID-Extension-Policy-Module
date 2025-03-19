@@ -29,6 +29,17 @@
         Write-Error "Certification Authority is not installed."
         return
     }
+    $IsElevated = $false
+    foreach ($sid in [Security.Principal.WindowsIdentity]::GetCurrent().Groups) {
+        if ($sid.Translate([Security.Principal.SecurityIdentifier]).IsWellKnown([Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid)) {
+            $IsElevated = $true
+        }
+    }
+
+    if (!$IsElevated) {
+        Write-Error "Local administrator permissions are required. Ensure that the console is executed in elevated mode and try again."
+        return
+    }
 
     $regTemplate = @'
 Windows Registry Editor Version 5.00
