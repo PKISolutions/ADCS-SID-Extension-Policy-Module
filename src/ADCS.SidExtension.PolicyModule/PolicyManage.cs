@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using ADCS.CertMod.Managed;
@@ -51,11 +52,11 @@ public class PolicyManage : ICertManageModule {
             case "description":
                 return "Adds protection to CA from NTDS Security\r\nextension spoofing in offline requests.";
             case "copyright":
-                return "Copyright (c) 2023, PKI Solutions LLC";
+                return "\u00a9 2023-2025, PKI Solutions LLC";
             case "file version":
-                return "1.1.0";
             case "product version":
-                return "1.1.0";
+                String? version = Assembly.GetExecutingAssembly().GetName().Version.ToString(3);
+                return version;
             default: return $"Unknown Property: {strPropertyName}";
         }
     }
